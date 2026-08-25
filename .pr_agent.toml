@@ -16,5 +16,37 @@ comments_location_policy = "both"
 inline_comments_severity_threshold = 3
 
 # Extra prompt for usecase to be added as instruction for the agent
-issues_user_guidelines = ""
+issues_user_guidelines = """
+FIRST, determine whether this repository is a Kubernetes operator scaffolded with
+kubebuilder / operator-sdk. Treat it as an operator ONLY if it has clear markers such as:
+  - a `PROJECT` file at the repo root, AND
+  - API type definitions under `api/*/v*beta*/` (or `apis/...`), AND
+  - controllers built on controller-runtime (e.g. `internal/controller/` or `controllers/`
+    with `Reconcile` methods and kubebuilder RBAC markers).
+
+If the repository is NOT a Kubernetes operator, IGNORE the operator-specific conventions
+below and perform a normal general-purpose review. Do not flag the absence of operator
+patterns in non-operator repos.
+
+If the repository IS a Kubernetes operator, review the changes against these
+openstack-k8s-operators conventions (following dev-docs, lib-common patterns, and
+openstack-k8s-operators best practices):
+
+- Reconciliation: Get/NotFound handling, finalizers, deferred status updates,
+  return-after-update.
+- Conditions: severity/reason rules, ReadyCondition lifecycle, no cross-cycle reliance.
+- ObservedGeneration: updated at reconcile start, sub-CR generation checks.
+- Webhooks: Spec-level Default()/Validate(), correct field paths, ErrorList accumulation.
+- API Design: name-based CR references, override patterns (probes, topology, affinity).
+- Child Objects: regenerable vs persistent lifecycle, OwnerReferences, finalizer pairing.
+- Testing: EnvTest coverage, Eventually/Gomega, simulated dependencies, unique namespaces.
+- Logging: ctrl.LoggerFrom(ctx), structured key-value logging, no fmt.Print.
+- RBAC: kubebuilder markers match actual resource access.
+- Code Style: import grouping, error wrapping, receiver naming, gopls modernize patterns.
+
+Dependency context: honor `Depends-On:` lines in the PR description and `replace`
+directives in go.mod that point at unreleased branches. Code that references types,
+helpers, or functions provided by a resolved dependency PR is valid -- do not flag such
+usage as "missing" or "undefined".
+"""
 compliance_user_guidelines = ""
